@@ -1,0 +1,60 @@
+body {
+  font-family: "Cairo", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-variation-settings: "slnt" 0;
+  height: fit-content;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  padding: 0 15;
+}
+
+.extension-title {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+button {
+  background-color: #3f5aa9;
+  color: white;
+  border: none;
+  border-radius: 18px;
+  padding: 0.65rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: center;
+  width: fit-content;
+  white-space: nowrap;
+  margin-bottom: 10px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+button:disabled {
+  background-color: #8dc5e6;
+  cursor: default;
+  box-shadow: none;
+}
+
+.devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.device-name-container {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.device-name-container p {
+  font-size: 14px;
+  line-height: 20px;
+  color: #1b1b1f;
+  margin: 0;
+}

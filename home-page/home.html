@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+    <link rel="icon" type="image/x-icon" href="../extension-logo.png" />
+  </head>
+  <body>
+    <header class="row-elements-on-sides">
+      <h2>Input mapper extension</h2>
+      <div class="header-buttons-container">
+        <button id="download-json-button" class="button-secondary">
+          Download JSON file for admin console configuration
+        </button>
+        <button id="connect-device-button" class="button-with-icon">
+          <img src="../assets/plus_icon.svg" alt="" />Register new device
+        </button>
+      </div>
+    </header>
+    <p class="description">
+      Input mapper allows you to change the button assignments for external
+      devices. This enables the use of foot pedals, game pads, and other HID
+      devices in the application of your choice.
+    </p>
+    <div id="devices-space"></div>
+    <script type="module" src="controller.js"></script>
+  </body>
+</html>
