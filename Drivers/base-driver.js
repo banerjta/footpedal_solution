@@ -13,8 +13,6 @@ export class BaseDriver {
    */
   open = async () => {
     const devicesWithPermissions = await navigator.hid.getDevices();
-    console.log(devicesWithPermissions);
-    console.log(this.productId);
     let device = devicesWithPermissions.filter((deviceElement) => {
       // return this.filter(deviceElement.productId, deviceElement.vendorId);
       return (

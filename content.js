@@ -75,7 +75,6 @@ const isDigit = (str) => {
 };
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-  console.log(message);
   const key = message.data.key;
   const keyCode = +message.data.keycode;
   switch (key) {

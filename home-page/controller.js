@@ -24,7 +24,6 @@ export const homeController = (function () {
   const setInputInterval = () => {
     if (inputIntervalId !== null) clearInterval(inputIntervalId);
     inputIntervalId = setInterval(() => {
-      console.log("herhehere");
       chrome.runtime.sendMessage({
         action: ACTIONS.POPUP_IN_INPUT_FIELD,
       });
@@ -87,7 +86,6 @@ export const homeController = (function () {
     await devicesWithMappingsModel.setUserMadeMappings(
       allSupportedDevicesKeyMappings
     );
-    console.log("update", allSupportedDevicesKeyMappings);
 
     chrome.runtime.sendMessage({
       action: ACTIONS.UPDATE_KEY_MAPPING,
@@ -162,7 +160,6 @@ const connectDeviceAttempt = async () => {
         return;
       }
       const device = devices[0];
-      console.log(device);
       // To inform the service worker that the device of the pid and vid
       // specified within the message has been granted permission in order
       // to connect to it
@@ -182,7 +179,6 @@ const connectDeviceAttempt = async () => {
 const downloadJSONConfiguration = async () => {
   const devicesKeyMappings =
     await homeController.loadMappingsFromLocalStorage();
-  console.log(devicesKeyMappings);
   const adminConfigurationObject = { devices: { Value: [] } };
   for (const deviceKey of Object.keys(devicesKeyMappings)) {
     let deviceObj = {};
@@ -206,7 +202,6 @@ const downloadJSONConfiguration = async () => {
     adminConfigurationObject.devices.Value.push(deviceObj);
   }
   const jsonString = JSON.stringify(adminConfigurationObject);
-  console.log(jsonString);
   const blob = new Blob([jsonString], { type: "application/json" });
   const link = document.createElement("a");
   link.href = URL.createObjectURL(blob);
@@ -253,7 +248,6 @@ chrome.runtime.onMessage.addListener(async function (
       break;
 
     case ACTIONS.BROADCAST_CONNECTED_DEVICES_WITH_MAPPINGS_RESPONSE:
-      console.log(message.connectedDevices);
       /**
        * @type {DevicesKeysMappings}
        */

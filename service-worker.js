@@ -5,7 +5,6 @@ import { devicesWithMappingsModel } from "./models/device-mappings-model.js";
 
 chrome.runtime.onStartup.addListener(async () => {
   const devicesWithPermissions = await navigator.hid.getDevices();
-  console.log(devicesWithPermissions);
   devicesWithPermissions.forEach(async (device) => {
     if (device.opened) {
       return;
@@ -16,7 +15,6 @@ chrome.runtime.onStartup.addListener(async () => {
 
 chrome.tabs.onCreated.addListener(async () => {
   const devicesWithPermissions = await navigator.hid.getDevices();
-  console.log(devicesWithPermissions);
   devicesWithPermissions.forEach(async (device) => {
     if (device.opened) {
       return;
@@ -84,7 +82,6 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
         }
       }
     }
-    console.log("updated-managed", currentUserMadeKeyMappings);
     await devicesWithMappingsModel.setUserMadeMappings(
       currentUserMadeKeyMappings
     );
@@ -151,7 +148,6 @@ let deviceDetails = undefined;
  *     the device disconnection, and makes notification to notify the user.
  */
 navigator.hid.addEventListener("disconnect", ({ device }) => {
-  console.log(device);
   // check if the disconnected device is one of the devices that were connected
   const disconnectedDevice = connectedDevices.find(
     (connectedDevice) =>
@@ -171,8 +167,14 @@ navigator.hid.addEventListener("disconnect", ({ device }) => {
   }
 });
 
-navigator.hid.addEventListener("connect", (event) => {
-  console.log("connectconnect");
+navigator.hid.addEventListener("connect", async (event) => {
+  const devicesWithPermissions = await navigator.hid.getDevices();
+  devicesWithPermissions.forEach(async (device) => {
+    if (device.opened) {
+      return;
+    }
+    connectDevice(device.productId, device.vendorId);
+  });
 });
 // send command and return a promise, the promise is resolved when sending command is done to do clean up
 /**
@@ -195,7 +197,6 @@ chrome.runtime.onMessage.addListener(async function (
   sender,
   sendResponse
 ) {
-  console.log(message);
   switch (message.action) {
     case ACTIONS.UPDATE_KEY_MAPPING:
       keyMapping = message.keyMapping;
@@ -291,7 +292,6 @@ const handleKeyInput = async (deviceName, vendorId, productId, key) => {
           typeof outputKeys[i].key === "number"
             ? outputKeys[i].key + ""
             : outputKeys[i].key;
-        console.log(key);
         // const keycode = parseInt(outputKeys[i].keycode, 10);
         const keycode = outputKeys[i].keycode;
         await sendCommand(tabs, key, keycode);
@@ -356,7 +356,6 @@ async function connectDevice(productId, vendorId) {
     action: ACTIONS.BROADCAST_CONNECTED_DEVICES_WITH_MAPPINGS_RESPONSE,
     connectedDevices: connectedDevices,
   });
-  console.log("sent device details");
 }
 
 /**
@@ -405,16 +404,13 @@ const isNewDevice = (productId, vendorId) => {
   chrome.storage.local
     .get(LOCAL_STORAGE.DEVICES_MAIN_KEY_MAPPINGS)
     .then((data) => {
-      console.log("service-main", data);
     });
   chrome.storage.local
     .get(LOCAL_STORAGE.USER_EDITED_DEVICES_KEY_MAPPINGS)
     .then((data) => {
-      console.log("service-user", data);
     });
   return new Promise((resolve, reject) => {
     chrome.storage.managed.get((data) => {
-      console.log("newDvice", data);
       data.devices?.forEach((device) => {
         if (device.pid === productId && device.vid === vendorId) {
           isNewDevice = false;
@@ -437,6 +433,5 @@ function startPopupTimer() {
   popupTimer = setTimeout(function () {
     // Your function to be called after 1 second of inactivity
     forwardInputToPopup = false;
-    console.log("popupclosed!");
   }, 1000);
 }

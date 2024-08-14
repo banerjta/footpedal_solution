@@ -58,7 +58,6 @@ export const homeView = (function () {
     outputKeyElement.disabled = isDisabled;
     outputKeyElement.classList.add("output-key");
     outputKeyElement.onkeydown = (event) => {
-      console.log("lll", event);
       outputKeyElement.value = event.key;
       outputKeyElement.setAttribute(
         "keycode",
@@ -86,7 +85,6 @@ export const homeView = (function () {
     isNewMapping,
     modifiable
   ) => {
-    console.log("keyobj", keyMappingObj);
     if (isNewMapping && Object.keys(keyMappingObj).length > 0) {
       const separator = document.createElement("div");
       separator.classList.add("separator");
@@ -107,7 +105,6 @@ export const homeView = (function () {
     inputElement.type = "text";
     inputElement.classList.add("input-key");
     inputElement.onkeyup = (event) => {
-      console.log("immmmmkeyup");
       homeController.updateMapping();
     };
     inputElement.addEventListener("focus", function () {
@@ -182,7 +179,6 @@ export const homeView = (function () {
   const showMappings = async () => {
     const allsupportedDevicesKeyMappings =
       await homeController.loadMappingsFromLocalStorage();
-    console.log("show new dev", allsupportedDevicesKeyMappings);
     /**
      * HTMLElement that will contain devices with their mappings
      * @type {HTMLElement}
@@ -359,7 +355,6 @@ export const homeView = (function () {
   const retrieveMappingsFromUI = async () => {
     const allSupportedDevicesMappings =
       await homeController.getAllSupportedDevicesKeyMappings();
-    console.log("conncted device", homeController.getConnectedDevices());
     const devicesContainer = document.getElementById("devices-space");
     const devicesList = devicesContainer.querySelectorAll(".mapping-div");
     Array.from(devicesList).forEach((mappingDiv) => {
@@ -388,7 +383,6 @@ export const homeView = (function () {
       });
       allSupportedDevicesMappings[mappingDiv.getAttribute("id")].mappings =
         someDeviceKeyMappings;
-      console.log("updatedddd", allSupportedDevicesMappings);
     });
     return allSupportedDevicesMappings;
   };
