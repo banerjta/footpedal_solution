@@ -340,7 +340,9 @@ async function connectDevice(productId, vendorId) {
     productId: productId,
   });
 
-  if (isNewDevice(productId, vendorId)) {
+  let newDevice = await isNewDevice(productId, vendorId);
+
+  if (newDevice) {
     chrome.runtime.sendMessage({
       action: ACTIONS.APPEND_NEW_DEVICE_MAPPINGS,
       deviceDetails: {
@@ -403,12 +405,10 @@ const isNewDevice = (productId, vendorId) => {
   let isNewDevice = true;
   chrome.storage.local
     .get(LOCAL_STORAGE.DEVICES_MAIN_KEY_MAPPINGS)
-    .then((data) => {
-    });
+    .then((data) => {});
   chrome.storage.local
     .get(LOCAL_STORAGE.USER_EDITED_DEVICES_KEY_MAPPINGS)
-    .then((data) => {
-    });
+    .then((data) => {});
   return new Promise((resolve, reject) => {
     chrome.storage.managed.get((data) => {
       data.devices?.forEach((device) => {
