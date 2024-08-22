@@ -1,5 +1,4 @@
-
- # footpedal_solution
+# footpedal_solution
  demo app and code for developing a solution for footpedal in chrome os
  Footpedal pad support - Foot controlACC2300
 # Features

@@ -141,27 +141,12 @@ export const devicesWithMappingsModel = (function () {
       chrome.storage.managed.get(async (data) => {
         policyDevices = data.devices;
         console.log("policyDevices", policyDevices);
-        const supportedDevices = [];
-        // to find what devices are supported are also listed in the JSON config file
-        DEVICES_LIST.forEach((device) => {
-          const filterResult = policyDevices.filter((deviceMapping) => {
-            return (
-              device.driver.vendorId === deviceMapping.vid &&
-              device.driver.productId === deviceMapping.pid
-            );
-          })[0];
-
-          if (filterResult) {
-            supportedDevices.push(filterResult);
-          }
-        });
-
         /**
          * @type {DevicesKeysMappings}
          */
         const allSupportedDevicesKeyMappings = {};
 
-        for (const device of supportedDevices) {
+        for (const device of policyDevices) {
           const mappings = {};
           allSupportedDevicesKeyMappings[
             `${device.name}-${device.vid}-${device.pid}`

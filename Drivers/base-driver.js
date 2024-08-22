@@ -1,8 +1,13 @@
 export class BaseDriver {
-  productId = 0x0000;
-  vendorId = 0x0000;
+  productId;
+  vendorId;
   hidDevice;
   deviceName;
+
+  constructor(vid, pid) {
+    this.vendorId = vid;
+    this.productId = pid;
+  }
 
   /**
    * Responsible for opening HID device if given permissions and if not already
@@ -23,6 +28,7 @@ export class BaseDriver {
     console.log(device);
     if (device) {
       this.hidDevice = device;
+      this.deviceName = device.productName;
       if (device?.opened) {
         return;
       }
@@ -30,14 +36,29 @@ export class BaseDriver {
     }
   };
 
-  setEntryHandler = () => {};
-
+  setEntryHandler = (callbackFunction) => {
+    this.hidDevice.oninputreport = (event) => {
+      const { data, device, reportId } = event;
+      let uint8Array = new Uint8Array(data.buffer);
+      const deviceInput = uint8Array[0];
+      console.log(deviceInput);
+      // The following strings within the condition represent neutral entries by the device
+      if (deviceInput !== 0) {
+        callbackFunction(
+          this.deviceName,
+          this.vendorId,
+          this.productId,
+          // this.deviceEntries[deviceInput]
+          deviceInput
+        );
+      }
+    };
+  };
   /**
    * Closes the HID device.
    */
   close = async () => {
     console.log(`${this.hidDevice} has been closed`);
-    // await this.hidDevice.close();
     await this.hidDevice.close();
   };
 }

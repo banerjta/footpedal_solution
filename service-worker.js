@@ -1,24 +1,52 @@
 import { ACTIONS } from "./constants/actions.js";
 import { DEVICES_LIST } from "./constants/devices-list.js";
-import { LOCAL_STORAGE } from "./constants/local-storage-keys.js";
+import { BaseDriver } from "./Drivers/base-driver.js";
 import { devicesWithMappingsModel } from "./models/device-mappings-model.js";
 
 chrome.runtime.onStartup.addListener(async () => {
   const devicesWithPermissions = await navigator.hid.getDevices();
+  let currentUserMadeKeyMappings =
+    await devicesWithMappingsModel.getUserMadeMappings();
+  if (!currentUserMadeKeyMappings) {
+    currentUserMadeKeyMappings =
+      await devicesWithMappingsModel.getDevicesMainKeyMappings();
+  }
   devicesWithPermissions.forEach(async (device) => {
     if (device.opened) {
       return;
     }
+    let deviceMapping;
+    if (currentUserMadeKeyMappings) {
+      deviceMapping = Object.keys(currentUserMadeKeyMappings).find((dev) => {
+        let [devName, devVID, devPID] = dev.split("-");
+        return device.vendorId == +devVID && device.productId == +devPID;
+      });
+    }
+    if (!deviceMapping) return;
     connectDevice(device.productId, device.vendorId);
   });
 });
 
 chrome.tabs.onCreated.addListener(async () => {
   const devicesWithPermissions = await navigator.hid.getDevices();
+  let currentUserMadeKeyMappings =
+    await devicesWithMappingsModel.getUserMadeMappings();
+  if (!currentUserMadeKeyMappings) {
+    currentUserMadeKeyMappings =
+      await devicesWithMappingsModel.getDevicesMainKeyMappings();
+  }
   devicesWithPermissions.forEach(async (device) => {
     if (device.opened) {
       return;
     }
+    let deviceMapping;
+    if (currentUserMadeKeyMappings) {
+      deviceMapping = Object.keys(currentUserMadeKeyMappings).find((dev) => {
+        let [devName, devVID, devPID] = dev.split("-");
+        return device.vendorId == +devVID && device.productId == +devPID;
+      });
+    }
+    if (!deviceMapping) return;
     connectDevice(device.productId, device.vendorId);
   });
 });
@@ -43,8 +71,9 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
     });
     for (const device of newDeviceMappingsFromPolicy) {
       const deviceKey = `${device.name}-${device.vid}-${device.pid}`;
-      if (!device.modifiable) {
+      if (!device.modifiable && currentUserMadeKeyMappings[deviceKey]) {
         currentUserMadeKeyMappings[deviceKey].modifiable = false;
+        currentUserMadeKeyMappings[deviceKey].mappings = {};
         const newMappings = {};
         let index = 0;
         for (const mapping of device.mapping) {
@@ -80,6 +109,8 @@ chrome.storage.onChanged.addListener(async (changes, area) => {
           };
           index++;
         }
+      } else {
+        currentUserMadeKeyMappings[deviceKey].modifiable = device.modifiable;
       }
     }
     await devicesWithMappingsModel.setUserMadeMappings(
@@ -169,10 +200,24 @@ navigator.hid.addEventListener("disconnect", ({ device }) => {
 
 navigator.hid.addEventListener("connect", async (event) => {
   const devicesWithPermissions = await navigator.hid.getDevices();
+  let currentUserMadeKeyMappings =
+    await devicesWithMappingsModel.getUserMadeMappings();
+  if (!currentUserMadeKeyMappings) {
+    currentUserMadeKeyMappings =
+      await devicesWithMappingsModel.getDevicesMainKeyMappings();
+  }
   devicesWithPermissions.forEach(async (device) => {
     if (device.opened) {
       return;
     }
+    let deviceMapping;
+    if (currentUserMadeKeyMappings) {
+      deviceMapping = Object.keys(currentUserMadeKeyMappings).find((dev) => {
+        let [devName, devVID, devPID] = dev.split("-");
+        return device.vendorId == +devVID && device.productId == +devPID;
+      });
+    }
+    if (!deviceMapping) return;
     connectDevice(device.productId, device.vendorId);
   });
 });
@@ -203,8 +248,6 @@ chrome.runtime.onMessage.addListener(async function (
       break;
 
     case ACTIONS.DEVICE_PERM_UPDATED:
-      devicesMappingsSupportedByAdmin =
-        message.devicesKeyMappingsSupportedByAdmin;
       connectDevice(message.productId, message.vendorId);
       break;
 
@@ -228,12 +271,12 @@ chrome.runtime.onMessage.addListener(async function (
       let deviceDriverToDisconnect = undefined;
       const productId = message.device.split("-")[2];
       const vendorId = message.device.split("-")[1];
-      for (let i = 0; i < DEVICES_LIST.length; i++) {
+      for (let i = 0; i < connectedDevices.length; i++) {
         if (
-          DEVICES_LIST[i].driver.productId == productId &&
-          DEVICES_LIST[i].driver.vendorId == vendorId
+          connectedDevices[i].driver.productId == productId &&
+          connectedDevices[i].driver.vendorId == vendorId
         ) {
-          deviceDriverToDisconnect = DEVICES_LIST[i];
+          deviceDriverToDisconnect = connectedDevices[i];
           break;
         }
       }
@@ -309,35 +352,37 @@ const handleKeyInput = async (deviceName, vendorId, productId, key) => {
  * @param {number} vendorId
  */
 async function connectDevice(productId, vendorId) {
-  if (!isDevicePermittedToConnect(productId, vendorId)) {
-    return;
-  }
-  let device = undefined;
+  // if (!isDevicePermittedToConnect(productId, vendorId)) {
+  //   return;
+  // }
+  let HIDDriver = undefined;
   // Make sure that the selected device by the user is supported by extension
   for (let i = 0; i < DEVICES_LIST.length; i++) {
     if (
       DEVICES_LIST[i].driver.productId == productId &&
       DEVICES_LIST[i].driver.vendorId == vendorId
     ) {
-      device = DEVICES_LIST[i];
+      HIDDriver = DEVICES_LIST[i].driver;
       break;
     }
   }
+  if (!HIDDriver) HIDDriver = new BaseDriver(vendorId, productId);
 
   try {
-    await device.driver.open();
-    device.driver.setEntryHandler(handleKeyInput);
+    await HIDDriver.open();
+    HIDDriver.setEntryHandler(handleKeyInput);
   } catch (error) {
     console.log(error);
     return;
   }
 
-  deviceName = device.driver.deviceName;
+  deviceName = HIDDriver.deviceName;
   deviceDetails = { pid: productId, vid: vendorId };
   connectedDevices.push({
     deviceName: deviceName,
     vendorId: vendorId,
     productId: productId,
+    driver: HIDDriver,
   });
 
   let newDevice = await isNewDevice(productId, vendorId);
@@ -400,22 +445,36 @@ function isDevicePermittedToConnect(productId, vendorId) {
   return true;
 }
 
-const isNewDevice = (productId, vendorId) => {
+const isNewDevice = async (productId, vendorId) => {
   // Check if the admin policy granted access for the selected device
   let isNewDevice = true;
-  chrome.storage.local
-    .get(LOCAL_STORAGE.DEVICES_MAIN_KEY_MAPPINGS)
-    .then((data) => {});
-  chrome.storage.local
-    .get(LOCAL_STORAGE.USER_EDITED_DEVICES_KEY_MAPPINGS)
-    .then((data) => {});
-  return new Promise((resolve, reject) => {
-    chrome.storage.managed.get((data) => {
-      data.devices?.forEach((device) => {
-        if (device.pid === productId && device.vid === vendorId) {
-          isNewDevice = false;
-        }
+  return new Promise(async (resolve, reject) => {
+    let currentUserMadeKeyMappings =
+    await devicesWithMappingsModel.getUserMadeMappings();
+  if (!currentUserMadeKeyMappings) {
+    currentUserMadeKeyMappings =
+      await devicesWithMappingsModel.getDevicesMainKeyMappings();
+  }
+    let deviceMapping;
+    if (currentUserMadeKeyMappings) {
+      deviceMapping = Object.keys(currentUserMadeKeyMappings).find((dev) => {
+        let [devName, devVID, devPID] = dev.split("-");
+        return vendorId == +devVID && productId == +devPID;
       });
+    }
+    console.log(currentUserMadeKeyMappings)
+    if (deviceMapping) {
+      isNewDevice = false;
+      resolve(isNewDevice);
+      return;
+    }
+    chrome.storage.managed.get((data) => {
+      let policyDevice = data.devices?.find((device) => {
+        device.pid === productId && device.vid === vendorId;
+      });
+      if (policyDevice) {
+        isNewDevice = false;
+      }
       resolve(isNewDevice);
     });
   });

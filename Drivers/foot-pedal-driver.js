@@ -2,10 +2,9 @@ import { BaseDriver } from "./base-driver.js";
 
 export class FootPedalDriver extends BaseDriver {
   constructor() {
-    super();
+    super(2321, 2330);
     this.productId = 2330;
     this.vendorId = 2321;
-    this.deviceName = "Foot pedal";
     this.deviceEntries = [
       "none",
       "right",
